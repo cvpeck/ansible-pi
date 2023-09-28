@@ -1,0 +1,43 @@
+
+- name: Install tmux
+  become: yes 
+  ansible.builtin.package:
+    name: tmux
+    state: present
+
+- name: Install screen for heathens
+  become: yes 
+  ansible.builtin.package:
+    name: screen
+    state: present
+
+- name: Add an Apt signing key for mistertea repoL
+  become: yes
+  ansible.builtin.apt_key:
+    url: https://mistertea.github.io/debian-et/et.gpg
+    state: present
+
+
+- name: Add mistertea repo into sources list
+  become: yes 
+  ansible.builtin.apt_repository:
+    repo: deb https://mistertea.github.io/debian-et/debian-source/ bullseye main
+    state: present
+
+- name: Install et for more stable ssh connections
+  become: yes 
+  ansible.builtin.package:
+    name: et
+    state: present
+
+- name: Enable et
+  become: yes 
+  ansible.builtin.service:
+    name: et
+    enabled: yes
+
+- name: Start service et
+  become: yes 
+  ansible.builtin.service:
+    name: et
+    state: started

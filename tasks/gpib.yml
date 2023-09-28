@@ -1,0 +1,167 @@
+- name: Install packages for GPIB
+  become: yes 
+  ansible.builtin.package:
+    name: 
+      - bpytop
+      - subversion
+      - build-essential
+      - texinfo 
+      - texi2html 
+      - libcwidget-dev 
+      - tcl8.6-dev 
+      - tk8.6-dev 
+      - libncurses5-dev 
+      - libx11-dev 
+      - binutils-dev 
+      - bison 
+      - flex
+      - libusb-1.0-0 
+      - libusb-dev 
+      - libmpfr-dev 
+      - libexpat1-dev 
+      - tofrodos 
+      - autoconf 
+      - automake 
+      - libtool 
+      - libpython3-dev
+      - tmux
+      - mc
+      - python3-pip
+      - libatlas-base-dev
+      - python3-smbus
+      - libopenblas-dev
+      - liblapack-dev
+      - gfortran
+      - raspberrypi-kernel-headers
+    state: latest
+  tags:
+    - gpib
+
+- name: Install required python libraries
+  ansible.builtin.pip:
+    name:
+      - numpy
+      - pyvisa
+      - pyvisa-py
+      - scipy
+      - openpyxl
+      - pandas
+      - xlrd
+      - pyserial
+      - pyusb
+    tags:
+      - gpib
+
+- name: Checkout subversion linux-gpib repository
+  ansible.builtin.subversion:
+    repo: https://svn.code.sf.net/p/linux-gpib/code/trunk
+    dest: /home/pi/repos/linux-gpib-code
+  tags:
+    - gpib
+
+- name: Compile linux-gpib kernel module
+  ansible.builtin.shell: make clean && make
+  args:
+    chdir: /home/pi/repos/linux-gpib-code/linux-gpib-kernel/
+  tags:
+    - gpib
+
+- name: Install linux-gpib kernel
+  become: yes
+  ansible.builtin.shell: make install
+  args:
+    chdir: /home/pi/repos/linux-gpib-code/linux-gpib-kernel/
+  tags:
+    - gpib
+
+- name: Compile linux-gpib user module
+  ansible.builtin.shell: ./bootstrap && ./configure && make
+  args:
+    chdir: /home/pi/repos/linux-gpib-code/linux-gpib-user/
+  tags:
+    - gpib
+
+- name: Install linux-gpib user module
+  become: yes
+  ansible.builtin.shell: make install
+  args:
+    chdir: /home/pi/repos/linux-gpib-code/linux-gpib-user/
+  tags:
+    - gpib
+
+- name: Replace gpib.conf file
+  become: yes
+  ansible.builtin.copy:
+    src: /home/pi/repos/meas_rpi/gpib/gpib.conf
+    dest: /usr/local/etc/gpib.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+    remote_src: yes
+  tags:
+    - gpib
+
+- name: Ensure group gpib exists
+  become: yes
+  ansible.builtin.group:
+    name: gpib
+    state: present
+  tags:
+    - gpib
+
+- name: Add the user pi to gpib group
+  become: yes
+  ansible.builtin.user:
+    name: pi
+    group: gpib
+  tags:
+    - gpib
+
+- name: Add gpib group to udev rules
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/udev/rules.d/99-com.rules
+    regexp: 'SUBSYSTEM=="usb", MODE="0666", GROUP="gpib"'
+    line: SUBSYSTEM=="usb", MODE="0666", GROUP="gpib"
+  tags:
+    - gpib
+
+- name: Run library reconfig (ldconfig)
+  become: yes
+  ansible.builtin.command: ldconfig
+  tags:
+    - gpib
+
+- name: Run gpib_config
+  become: yes
+  ansible.builtin.command: gpib_config
+  tags:
+    - gpib
+
+
+# #install VXI11 server
+# sudo systemctl enable rpcbind
+# sudo systemctl start rpcbind
+# cd ~/repos
+# git clone https://github.com/PhilippCo/python-vxi11-server.git
+# sudo cp python-vxi11-server/vxi-bridge.service /lib/systemd/system/
+# sudo systemctl daemon-reload
+# sudo systemctl enable vxi-bridge.service
+# sudo systemctl start vxi-bridge.service
+# sudo systemctl status vxi-bridge.service
+
+
+# #install testgear lib
+# cd ~/repos
+# git clone https://github.com/PhilippCo/testgear.git
+# cd testgear
+# pip3 install -e ./
+
+
+# echo "generate SSH key"
+# ssh-keygen -b 4096 -t rsa -f /home/pi/.ssh/id_rsa -q -N ""
+
+
+
+

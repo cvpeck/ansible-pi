@@ -1,3 +1,9 @@
+- name: Check if pyenv installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.pyenv"
+  register: pyenv_stat
+
+
 - name: Install build environment
   become: true
   apt:
@@ -24,9 +30,12 @@
     url: https://pyenv.run
     dest: /tmp/install_pyenv.sh
     mode: 0755
+  when: not pyenv_stat.stat.exists
 
 - name: Run install script
   shell: /tmp/install_pyenv.sh
+  when: not pyenv_stat.stat.exists
+
 
 - name: Add pyenv to .bashrc
   blockinfile:
@@ -37,6 +46,8 @@
       eval "$(pyenv init -)"
     marker: '# {mark} ANSIBLE MANAGED BLOCK - pyenv'
     create: yes
+  when: not pyenv_stat.stat.exists
+
 
 - name: Add pyenv to .profile
   blockinfile:
@@ -47,3 +58,4 @@
       eval "$(pyenv init -)"
     marker: '# {mark} ANSIBLE MANAGED BLOCK - pyenv'
     create: yes
+  when: not pyenv_stat.stat.exists
