@@ -1,6 +1,6 @@
 - name: Install cups packages
   become: true
-  apt:
+  ansible.builtin.apt:
     update_cache: true
     cache_valid_time: 3600
     pkg:
@@ -10,17 +10,17 @@
 
 - name: Add user to lpadmin group
   become: true
-  user:
+  ansible.builtin.user:
     name: "{{ ansible_user }}"
     groups: lpadmin
     append: yes
 
 - name: Setup cups
   become: true
-  shell: cupsctl --remote-admin --remote-any --share-printers
+  ansible.builtin.shell: cupsctl --remote-admin --remote-any --share-printers
 
 - name: Restart cups service
   become: true
-  service:
+  ansible.builtin.service:
     name: cups
     state: restarted

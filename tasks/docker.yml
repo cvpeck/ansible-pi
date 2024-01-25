@@ -1,4 +1,3 @@
-
 - name: Install initial packages
   become: true
   apt:
@@ -11,18 +10,18 @@
 
 - name: Install docker repo key to apt
   become: true
-  apt_key:
+  ansible.builtin.apt_key:
     url: https://download.docker.com/linux/debian/gpg
 
 - name: Install docker repository to apt
   become: true
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: deb [arch=arm64] https://download.docker.com/linux/debian bullseye stable
     state: present
 
 - name: Install docker packages
   become: true
-  apt:
+  ansible.builtin.apt:
     update_cache: true
     pkg:
       - docker-ce
@@ -33,24 +32,24 @@
 
 - name: Reboot the machine to make the docker.service start # see: https://bbs.archlinux.org/viewtopic.php?id=267694
   become: true
-  reboot:
+  ansible.builtin.reboot:
 
 - name: Enable docker.service
   become: true
-  service:
+  ansible.builtin.service:
     name: docker
     state: restarted
     enabled: yes
     
 - name: Create "docker" group
   become: true
-  group:
+  ansible.builtin.group:
     name: docker
     state: present
 
 - name: Add user to "docker" group
   become: true
-  user:
+  ansible.builtin.user:
     name: "{{ ansible_user }}"
     groups: docker
     append: yes

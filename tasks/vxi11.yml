@@ -1,0 +1,53 @@
+- name: Enable rpcbind
+  become: true 
+  ansible.builtin.service:
+    name: rpcbind
+    enabled: true
+  tags:
+    -vxi11
+
+- name: Start service prcbind
+  become: true
+  ansible.builtin.service:
+    name: rpcbind
+    state: started
+  tags:
+    - vxi11
+
+- name: Git checkout of code
+  ansible.builtin.git:
+    repo: "https://github.com/PhilippCo/python-vxi11-server.git"
+    dest: /home/pi/repos/python-vxi11-server
+  tags:
+    - vxi11
+
+
+- name: Copy startup file for vxi-bridge
+  become: true
+  ansible.builtin.copy:
+    remote_src: true
+    src: /home/pi/repos/python-vxi11-server/vxi-bridge.service
+    dest: /etc/systemd/system/
+    owner: root
+    group: root
+    mode: '0644'
+    backup: false
+  tags:
+    - vxi11
+
+- name: Enable vxi-bridge service
+  become: true 
+  ansible.builtin.service:
+    name: vxi-bridge
+    enabled: true
+  tags:
+    - vxi11
+
+- name: Start service vxi-bridge
+  become: true 
+  ansible.builtin.service:
+    name: vxi-bridge
+    state: started
+  tags:
+    - vxi11
+
