@@ -1,0 +1,25 @@
+- name: Install vscode prerequisite packages
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    pkg:
+      - install
+      - wget
+      - gpg
+  tags:
+    - vscode
+
+- name: Download package
+  get_url:
+    url: https://go.microsoft.com/fwlink/?LinkID=760868
+    dest: /tmp/vscode.deb
+    mode: 0400
+  tags:
+    vscode
+
+- name: Install vscode from deb package
+  ansible.builtin.apt:
+    deb: /tmp/vscode.deb
+  tags:
+    - vscode
