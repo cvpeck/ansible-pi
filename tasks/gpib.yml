@@ -5,24 +5,24 @@
       - bpytop
       - subversion
       - build-essential
-      - texinfo 
-      - texi2html 
-      - libcwidget-dev 
-      - tcl8.6-dev 
-      - tk8.6-dev 
-      - libncurses5-dev 
-      - libx11-dev 
-      - binutils-dev 
-      - bison 
+      - texinfo
+      - texi2html
+      - libcwidget-dev
+      - tcl8.6-dev
+      - tk8.6-dev
+      - libncurses5-dev
+      - libx11-dev
+      - binutils-dev
+      - bison
       - flex
-      - libusb-1.0-0 
-      - libusb-dev 
-      - libmpfr-dev 
-      - libexpat1-dev 
-      - tofrodos 
-      - autoconf 
-      - automake 
-      - libtool 
+      - libusb-1.0-0
+      - libusb-dev
+      - libmpfr-dev
+      - libexpat1-dev
+      - tofrodos
+      - autoconf
+      - automake
+      - libtool
       - libpython3-dev
       - tmux
       - mc
@@ -33,6 +33,7 @@
       - liblapack-dev
       - gfortran
       - raspberrypi-kernel-headers
+      - socat
     state: latest
   tags:
     - gpib
@@ -49,8 +50,8 @@
       - xlrd
       - pyserial
       - pyusb
-    tags:
-      - gpib
+  tags:
+    - gpib
 
 - name: Checkout subversion linux-gpib repository
   ansible.builtin.subversion:
@@ -92,13 +93,12 @@
 - name: Replace gpib.conf file
   become: yes
   ansible.builtin.copy:
-    src: /home/pi/repos/meas_rpi/gpib/gpib.conf
+    src: assets/gpib.conf
     dest: /usr/local/etc/gpib.conf
     owner: root
     group: root
     mode: '0644'
     backup: yes
-    remote_src: yes
   tags:
     - gpib
 
@@ -133,24 +133,17 @@
   tags:
     - gpib
 
+- name: Setup gpib to use gpib_bitbang for GPIB Pi Hat
+  become: yes
+  ansible.builtin.command: modprobe gpib_bitbang sn7516x_used=1
+  tags:
+    - gpib
+
 - name: Run gpib_config
   become: yes
   ansible.builtin.command: gpib_config
   tags:
     - gpib
-
-
-# #install VXI11 server
-# sudo systemctl enable rpcbind
-# sudo systemctl start rpcbind
-# cd ~/repos
-# git clone https://github.com/PhilippCo/python-vxi11-server.git
-# sudo cp python-vxi11-server/vxi-bridge.service /lib/systemd/system/
-# sudo systemctl daemon-reload
-# sudo systemctl enable vxi-bridge.service
-# sudo systemctl start vxi-bridge.service
-# sudo systemctl status vxi-bridge.service
-
 
 # #install testgear lib
 # cd ~/repos
@@ -161,7 +154,3 @@
 
 # echo "generate SSH key"
 # ssh-keygen -b 4096 -t rsa -f /home/pi/.ssh/id_rsa -q -N ""
-
-
-
-
