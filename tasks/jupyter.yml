@@ -50,6 +50,20 @@
     - jupyter
     - git
 
+- name: Check if jupyter server config already exists
+  stat:
+    path: "/home/pi/.jupyter/jupyter_server_config.py"
+  register: jupyterserverconf_stat
+  tags:
+    - jupyter
+
+- name: Generate jupyter server config
+  ansible.builtin.shell: "/home/pi/.local/bin/jupyter server --generate-config"
+  when: not jupyterserverconf_stat.stat.exists
+  tags:
+    - jupyter
+
+
 - name: Copy jupyter service file
   become: yes
   ansible.builtin.copy:
@@ -61,6 +75,17 @@
     mode: '0644'
   tags:
     - jupyter
+
+- name: Install password into services startup file
+  become: true
+  ansible.builtin.debug:
+    var: jupyter_password
+    verbosity: 0
+  tags:
+    - jupyter
+
+
+
 
 - name: Enable jupyter service
   become: yes 
