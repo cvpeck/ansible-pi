@@ -106,6 +106,18 @@
   tags:
     - jupyter
   
+- name: Write password to server config file as well
+  become: true      
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.jupyter/jupyter_server_config.json" 
+    content: '    
+      {
+        "IdentityProvider": {
+          "hashed_password": "{{ jpasswordhash.stdout }}"
+        }
+      }'        
+  tags:
+    - jupyter      
 
 - name: Enable jupyter service
   become: true 
@@ -119,7 +131,7 @@
   become: true 
   ansible.builtin.service:
     name: jupyter
-    state: started
+    state: restarted
   tags: jupyter
 
 - name: Check if jupyter config already exists
