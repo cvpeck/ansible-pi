@@ -118,12 +118,29 @@
   tags:
     - gpib
 
-- name: Add gpib group to udev rules
+- name: Add gpib group to udev rules for usb devices
   become: yes
   ansible.builtin.lineinfile:
     path: /etc/udev/rules.d/99-com.rules
     regexp: 'SUBSYSTEM=="usb", MODE="0666", GROUP="gpib"'
     line: SUBSYSTEM=="usb", MODE="0666", GROUP="gpib"
+    state: present
+  tags:
+    - gpib
+
+- name: Add gpib group to udev rules for /dev/gpib devices
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/udev/rules.d/99-com.rules
+    regexp: 'KERNEL=="gpib[0-9]*", GROUP="gpib", MODE="0666"'
+    line: KERNEL=="gpib[0-9]*", GROUP="gpib", MODE="0666"
+    state: present
+  tags:
+    - gpib
+
+- name: Reread udev rules
+  become: yes
+  ansible.builtin.command; udevadm control --reload-rules && udevadm trigger
   tags:
     - gpib
 
