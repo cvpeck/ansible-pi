@@ -1,29 +1,31 @@
 
 - name: Create notebook directory
   ansible.builtin.file:
-    path: /home/pi/notebooks
+    path: "{{ ansible_env.HOME }}/notebooks"
     state: directory
     mode: '0755'
   tags: jupyter
 
 - name: Create repos directory
   ansible.builtin.file:
-    path: /home/pi/repos
+    path: "{{ ansible_env.HOME }}/repos"
     state: directory
     mode: '0755'
   tags:
     - jupyter
 
-- name: Install packages for jupyter
-  become: yes 
-  ansible.builtin.package:
-    name: 
-      - redis-server
-      - libffi-dev
-    state: latest
+- name: Install prerequisite packages for Jupyter
+  become: true
+  action: >
+    {{ ansible_pkg_mgr }} name={{ item }} state=latest update_cache=yes
+  with_items:
+    - crudini
+    - redis-server
+    - libffi-dev
   tags:
     - jupyter
     - packages
+
 
 - name: Install required python libraries for jupyter
   ansible.builtin.pip:
@@ -44,59 +46,77 @@
 - name: Git checkout of code 
   ansible.builtin.git:
     repo: "https://github.com/cvpeck/meas_rpi.git"
-    dest: /home/pi/repos/meas_rpi
+    dest: "{{ ansible_env.HOME }}/repos/meas_rpi"
     version: cvp_devel
   tags:
     - jupyter
     - git
 
-- name: Check if jupyter server config already exists
-  stat:
-    path: "/home/pi/.jupyter/jupyter_server_config.py"
-  register: jupyterserverconf_stat
-  tags:
-    - jupyter
-
-- name: Generate jupyter server config
-  ansible.builtin.shell: "/home/pi/.local/bin/jupyter server --generate-config"
-  when: not jupyterserverconf_stat.stat.exists
-  tags:
-    - jupyter
-
-
 - name: Copy jupyter service file
-  become: yes
+  become: true
   ansible.builtin.copy:
-    src: /home/pi/repos/meas_rpi/jupyter/jupyter.service
-    dest: /etc/systemd/system/
-    remote_src: yes
+    src: "{{ ansible_env.HOME }}/repos/meas_rpi/jupyter/jupyter.service"
+    dest: "/etc/systemd/system/"
+    remote_src: true
     owner: root
     group: root
     mode: '0644'
   tags:
     - jupyter
 
-- name: Install password into services startup file
-  become: true
-  ansible.builtin.debug:
-    var: jupyter_password
-    verbosity: 0
+- name: Ensure var jupyter_password is defined
+  fail: msg="Bailing out. Please define 'jupyter_password' var."
+  when: jupyter_password is undefined
   tags:
     - jupyter
 
+- name: Generate self-signed cert
+  ansible.builtin.command: "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout mykey.key -out mycert.pem -batch"
+  args: 
+    creates: "{{ ansible_env.HOME }}/mykey.key"
+  tags:
+    - jupyter
 
+- name: Generate jupyter config
+  ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/jupyter notebook --generate-config --allow-root"
+  args: 
+    creates: "{{ ansible_env.HOME }}/.jupyter/jupyter_notebook_config.py"
+  tags:
+    - jupyter
 
+# master only
+- name: Generate jupyter password
+  ansible.builtin.shell: "PYTHONPATH={{ ansible_env.HOME }}/.local/lib/python3.9/site-packages python -c 'from jupyter_server.auth import passwd; print(passwd(\"{{ jupyter_password }}\"))'"
+  register: jpasswordhash
+  tags:
+    - jupyter
+
+- name: Modify jupyter config
+  become: true
+  command: "{{ item }}"
+  args:
+    chdir: "{{ ansible_env.HOME }}"
+  with_items:
+    - crudini --set .jupyter/jupyter_notebook_config.py '' c.NotebookApp.certfile u\'{{ ansible_env.HOME }}/mycert.pem\'
+    - crudini --set .jupyter/jupyter_notebook_config.py '' c.NotebookApp.ip \'*\'
+    - crudini --set .jupyter/jupyter_notebook_config.py '' c.NotebookApp.keyfile u\'{{ ansible_env.HOME }}/mykey.key\'
+    - crudini --set .jupyter/jupyter_notebook_config.py '' c.NotebookApp.open_browser False
+    - crudini --set .jupyter/jupyter_notebook_config.py '' c.PasswordIdentityProvider.hashed_password u\'{{ jpasswordhash.stdout }}\'
+    - crudini --set .jupyter/jupyter_notebook_config.py '' c.PasswordIdentityProvider.password_required True
+  tags:
+    - jupyter
+  
 
 - name: Enable jupyter service
-  become: yes 
+  become: true 
   ansible.builtin.service:
     name: jupyter
-    enabled: yes
+    enabled: true
   tags:
     - jupyter
 
 - name: Start service jupyter
-  become: yes 
+  become: true 
   ansible.builtin.service:
     name: jupyter
     state: started
@@ -104,38 +124,38 @@
 
 - name: Check if jupyter config already exists
   stat:
-    path: "/home/pi/.jupyter/jupyter_notebook_config.py"
+    path: "{{ ansible_env.HOME }}/.jupyter/jupyter_notebook_config.py"
   register: jupyterconf_stat
   tags:
     - jupyter
 
 - name: Generate jupyter notebook config
-  ansible.builtin.shell: "/home/pi/.local/bin/jupyter notebook --generate-config"
+  ansible.builtin.shell: "{{ ansible_env.HOME }}/.local/bin/jupyter notebook --generate-config"
   when: not jupyterconf_stat.stat.exists
   tags:
     - jupyter
 
 - name: Link in jupyter examples
   ansible.builtin.copy:
-    src: /home/pi/repos/meas_rpi/jupyter/examples
-    dest: /home/pi/notebooks/examples
-    follow: yes
-    remote_src: yes
+    src: "{{ ansible_env.HOME }}/repos/meas_rpi/jupyter/examples"
+    dest: "{{ ansible_env.HOME }}/notebooks/examples"
+    follow: true
+    remote_src: true
   tags:
     - jupyter
 
 - name: Link in jupyter maintenance
   ansible.builtin.copy:
-    src: /home/pi/repos/meas_rpi/jupyter/maintenance
-    dest: /home/pi/notebooks/maintenance
-    follow: yes
-    remote_src: yes
+    src: "{{ ansible_env.HOME }}/repos/meas_rpi/jupyter/maintenance"
+    dest: "{{ ansible_env.HOME }}/notebooks/maintenance"
+    follow: true
+    remote_src: true
   tags:
     - jupyter
 
 - name: Create jupyter backups folder
   ansible.builtin.file:
-    path: /home/pi/repos/meas_rpi/jupyter/maintenance/backups
+    path: "{{ ansible_env.HOME }}/repos/meas_rpi/jupyter/maintenance/backups"
     state: directory
     mode: '0755'
   tags:
@@ -145,7 +165,7 @@
 
 - name: Create jupyter cron
   ansible.builtin.file:
-    path: /home/pi/notebooks/cron
+    path: "{{ ansible_env.HOME }}/notebooks/cron"
     state: directory
     mode: '0755'
   tags:
@@ -153,7 +173,7 @@
 
 - name: Create jupyter cron
   ansible.builtin.file:
-    path: /home/pi/notebooks/cron
+    path: "{{ ansible_env.HOME }}/notebooks/cron"
     state: directory
     mode: '0755'
   tags:
@@ -161,7 +181,7 @@
 
 - name: Create jupyter cron
   ansible.builtin.file:
-    path: /home/pi/notebooks/cron/nightly
+    path: "{{ ansible_env.HOME }}/notebooks/cron/nightly"
     state: directory
     mode: '0755'
   tags:
@@ -170,7 +190,7 @@
 
 - name: Create jupyter cron
   ansible.builtin.file:
-    path: /home/pi/notebooks/cron/hourly
+    path: "{{ ansible_env.HOME }}/notebooks/cron/hourly"
     state: directory
     mode: '0755'
   tags:
@@ -178,18 +198,18 @@
 
 
 - name: Add nightly backup script to sbin
-  become: yes
+  become: true
   ansible.builtin.copy:
-    src: /home/pi/repos/meas_rpi/scripts/cron_nightly.sh
+    src: "{{ ansible_env.HOME }}/repos/meas_rpi/scripts/cron_nightly.sh"
     dest: /usr/sbin/
-    follow: yes
-    remote_src: yes
+    follow: true
+    remote_src: true
   tags:
     - jupyter
 
 - name: Tighten up permissions on nightly scrpt
   ansible.builtin.file:
-    path: /usr/sbin/cron_nightly.sh
+    path: "/usr/sbin/cron_nightly.sh"
     owner: root
     group: root
     mode: '0755'
@@ -204,18 +224,18 @@
     job: "/usr/sbin/cron_nightly.sh"
 
 - name: Add hourly backup script to sbin
-  become: yes
+  become: true
   ansible.builtin.copy:
-    src: /usr/sbin/cron_hourly.sh
-    dest: /usr/sbin/
-    follow: yes
-    remote_src: yes
+    src: "/usr/sbin/cron_hourly.sh"
+    dest: "/usr/sbin/"
+    follow: true
+    remote_src: true
   tags:
     - jupyter
 
 - name: Tighten up permissions on hourly scrpt
   ansible.builtin.file:
-    path: /usr/sbin/cron_hourly.sh
+    path: "/usr/sbin/cron_hourly.sh"
     owner: root
     group: root
     mode: '0755'
