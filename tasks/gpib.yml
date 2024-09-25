@@ -34,6 +34,7 @@
       - gfortran
       - raspberrypi-kernel-headers
       - socat
+      - lldb
     state: latest
   tags:
     - gpib
@@ -53,17 +54,24 @@
   tags:
     - gpib
 
-- name: Checkout subversion linux-gpib repository
-  ansible.builtin.subversion:
-    repo: https://svn.code.sf.net/p/linux-gpib/code/trunk
-    dest: /home/pi/repos/linux-gpib-code
+- name: Delete existing linux-gpib-code folder
+  file:
+    path: "{{ ansible_env.HOME }}/repos/linux-gpib-code"
+    state: absent
+  tags:
+    - gpib
+
+- name: Checkout linux-gpib git repository
+  ansible.builtin.git:
+    repo: "https://git.code.sf.net/p/linux-gpib/git"
+    dest: "{{ ansible_env.HOME }}/repos/linux-gpib-code"
   tags:
     - gpib
 
 - name: Compile linux-gpib kernel module
   ansible.builtin.shell: make clean && make
   args:
-    chdir: /home/pi/repos/linux-gpib-code/linux-gpib-kernel/
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
   tags:
     - gpib
 
@@ -71,14 +79,14 @@
   become: yes
   ansible.builtin.shell: make install
   args:
-    chdir: /home/pi/repos/linux-gpib-code/linux-gpib-kernel/
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
   tags:
     - gpib
 
 - name: Compile linux-gpib user module
   ansible.builtin.shell: ./bootstrap && ./configure && make
   args:
-    chdir: /home/pi/repos/linux-gpib-code/linux-gpib-user/
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-user/"
   tags:
     - gpib
 
@@ -86,7 +94,7 @@
   become: yes
   ansible.builtin.shell: make install
   args:
-    chdir: /home/pi/repos/linux-gpib-code/linux-gpib-user/
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-user/"
   tags:
     - gpib
 
@@ -140,7 +148,7 @@
 
 - name: Reread udev rules
   become: yes
-  ansible.builtin.command; udevadm control --reload-rules && udevadm trigger
+  ansible.builtin.shell: "udevadm control --reload-rules && udevadm trigger"
   tags:
     - gpib
 
@@ -161,6 +169,24 @@
   ansible.builtin.command: gpib_config
   tags:
     - gpib
+
+- name: Delete existing equipment folder
+  file:
+    path: "{{ ansible_env.HOME }}/repos/GPIBEquipController"
+    state: absent
+  tags:
+    - gpib
+
+- name: Checkout equipment repo
+  ansible.builtin.git:
+    repo: "git@github.com:cvpeck/GPIBEquipController.git"
+    dest: "{{ ansible_env.HOME }}/repos/GPIBEquipController"
+    clone: yes
+    update: yes
+    force: yes
+  tags:
+    - gpib
+
 
 # #install testgear lib
 # cd ~/repos
