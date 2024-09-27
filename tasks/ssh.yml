@@ -28,14 +28,20 @@
   tags:
     - ssh
 
-- name: Display ssh key
+- name: Get key contents
+  ansible.builtin.command: "cat {{ ansible_env.HOME }}/.ssh/id_ed25519.pub"
+  register: command_output
+  tags:
+    - ssh
+
+- name: Print to console
   ansible.builtin.debug:
-    msg: "Public key is {{ lookup('ansible.builtin.file', '{{ ansible_env.HOME }}/.ssh/id_ed25519.pub') }}"
+    msg: "{{ command_output.stdout }}"
   tags:
     - ssh
 
 - name: Pause for public key copying
-  ansible.builting.pause:
+  ansible.builtin.pause:
     prompt: "Please enter the above ssh public key to GitHub and then press a key"
     echo: true
   tags:
