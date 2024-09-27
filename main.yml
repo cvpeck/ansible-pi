@@ -1,0 +1,101 @@
+---
+- name: Main
+  hosts: piGPIBs
+  vars_prompt:
+    - name: jupyter_password
+      prompt: Enter password for jupyter server
+      default: "Password1"
+      private: true
+      confirm: true
+
+
+  vars:
+    swap_size_mb: 1024
+    git_user_email: "chris@geekathome.net"
+    git_user_name: "Chris Peck"
+    zerotier_network_id: "<network_id>"
+    airsane_build_dir: "{{ ansible_env.HOME }}/Projects/AirSane-build/"
+    usb_device_path: "/dev/sda1"
+    usb_mount_path: "/media/usb-drive"
+  tasks:
+    - name: Initial setup
+      ansible.builtin.include_tasks:
+        file: tasks/initial_setup.yml
+
+    - name: SWAP
+      ansible.builtin.include_tasks:
+        file: tasks/swap.yml
+
+    - name: GIT
+      ansible.builtin.include_tasks:
+        file: tasks/git.yml
+
+    - name: SSH
+      ansible.builtin.include_tasks:
+        file: tasks/ssh.yml
+      tags:
+        - ssh
+
+    # - name: ZeroTier
+    #   ansible.builtin.include_tasks:
+    #     file: tasks/zerotier.yml
+
+    - name: Pyenv
+      ansible.builtin.include_tasks:
+        file: tasks/pyenv.yml
+
+    - name: CUPS
+      ansible.builtin.include_tasks:
+        file: tasks/cups.yml
+
+    - name: AirSane
+      ansible.builtin.include_tasks:
+        file: tasks/airsane.yml
+
+    - name: Docker
+      ansible.builtin.include_tasks:
+        file: tasks/docker.yml
+      tags:
+        - docker
+
+    - name: Sshadditions
+      ansible.builtin.include_tasks:
+        file: tasks/sshadditions.yml
+      tags:
+        - sshadditions  
+
+    - name: GPIB
+      ansible.builtin.include_tasks:
+        file: tasks/gpib.yml
+      tags:
+        - gpib
+
+    - name: Jupyter
+      ansible.builtin.include_tasks:
+        file: tasks/jupyter.yml
+      tags:
+        - jupyter
+
+    - name: Vxi11
+      ansible.builtin.include_tasks:
+        file: tasks/vxi11.yml
+      tags:
+        - vxi11
+
+    - name: Testgearlibs
+      ansible.builtin.include_tasks:
+        file: tasks/testgearlibs.yml
+      tags:
+        - testgearlibs
+
+    - name: InstallVSCode
+      ansible.builtin.include_tasks:
+        file: tasks/vscode.yml
+      tags:
+        - vscode
+
+# ========== OPTIONAL ==================
+
+#    - name: Docker to USB
+#      ansible.builtin.include_tasks:
+#        file: tasks/docker_to_usb.yml
