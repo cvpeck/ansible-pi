@@ -18,6 +18,8 @@
   ansible.builtin.git:
     repo: "https://github.com/PhilippCo/python-vxi11-server.git"
     dest: /home/pi/repos/python-vxi11-server
+    clone: true
+    update: true
   tags:
     - vxi11
 

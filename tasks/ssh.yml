@@ -31,6 +31,7 @@
 - name: Get key contents
   ansible.builtin.command: "cat {{ ansible_env.HOME }}/.ssh/id_ed25519.pub"
   register: command_output
+  changed_when: command_output.rc != 0
   tags:
     - ssh
 

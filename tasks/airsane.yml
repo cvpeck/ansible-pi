@@ -15,6 +15,8 @@
       - sane-airscan
       - sane-utils
       - avahi-daemon
+  tags:
+    - airsane
 
 - name: Comment out "escl" in dll.conf
   become: true
@@ -22,6 +24,8 @@
     path: /etc/sane.d/dll.conf
     regexp: "^escl"
     line: "#escl"
+  tags:
+    - airsane
 
 - name: Add "airsane" in dll.conf
   become: true
@@ -29,25 +33,40 @@
     path: /etc/sane.d/dll.conf
     insertbefore: apple
     line: airsane
+  tags:
+    - airsane
 
 - name: Clone AirSane repository
   ansible.builtin.git:
     repo: 'https://github.com/SimulPiscator/AirSane.git'
-    dest: "{{ansible_env.HOME}}/Projects/AirSane"
+    dest: "{{ ansible_env.HOME }}/Projects/AirSane"
+  tags:
+    - airsane
 
 - name: Create a build directory if it does not exist
   ansible.builtin.file:
     path: "{{ airsane_build_dir }}"
     state: directory
+    owner: pi
+    group: pi
+    mode: '0755'
+  tags:
+    - airsane
 
 - name: Cmake AirSane
   ansible.builtin.shell: cmake ../AirSane
   args:
     chdir: "{{ airsane_build_dir }}"
+  register: cmake_airsane_output
+  changed_when: cmake_airsane_output.rc != 0
+  tags:
+    - airsane
 
 - name: Build AirSane
   ansible.builtin.make:
     chdir: "{{ airsane_build_dir }}"
+  tags:
+    - airsane
 
 - name: Install AirSane
   become: true
@@ -60,4 +79,4 @@
   ansible.builtin.service:
     name: airsaned
     state: restarted
-    enabled: yes
+    enabled: true

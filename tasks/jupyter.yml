@@ -88,6 +88,8 @@
 - name: Generate jupyter password
   ansible.builtin.shell: "PYTHONPATH={{ ansible_env.HOME }}/.local/lib/python3.9/site-packages python -c 'from jupyter_server.auth import passwd; print(passwd(\"{{ jupyter_password }}\"))'"
   register: jpasswordhash
+  changed_when: jpasswordhash.rc != 0
+
   tags:
     - jupyter
 
@@ -103,6 +105,8 @@
     - crudini --set .jupyter/jupyter_notebook_config.py '' c.NotebookApp.open_browser False
     - crudini --set .jupyter/jupyter_notebook_config.py '' c.PasswordIdentityProvider.hashed_password u\'{{ jpasswordhash.stdout }}\'
     - crudini --set .jupyter/jupyter_notebook_config.py '' c.PasswordIdentityProvider.password_required True
+  register: crudini_config_output
+  changed_when: crudini_config_output.rc != 0
   tags:
     - jupyter
 
@@ -147,6 +151,8 @@
 - name: Generate jupyter notebook config
   ansible.builtin.shell: "{{ ansible_env.HOME }}/.local/bin/jupyter notebook --generate-config"
   when: not jupyterconf_stat.stat.exists
+  register: notebook_config_output
+  changed_when: notebook_config_output.rc != 0
   tags:
     - jupyter
 

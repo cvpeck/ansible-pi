@@ -40,6 +40,8 @@
 - name: Run install script
   ansible.builtin.shell: /tmp/install_pyenv.sh
   when: not pyenv_stat.stat.exists
+  register: install_pyenv_output
+  changed_when: install_pyenv__output.rc != 0
   tags:
     - pyenv
 

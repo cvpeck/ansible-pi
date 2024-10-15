@@ -71,6 +71,8 @@
   ansible.builtin.shell: make clean && make
   args:
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
+  register: linux_gpib_kernel_make_output
+  changed_when: linux_gpib_kernel_make_output.rc != 0
   tags:
     - gpib
 
@@ -79,6 +81,8 @@
   ansible.builtin.shell: make install
   args:
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
+  register: linux_gpib_make_output
+  changed_when: linux_gpib_make_output.rc != 0
   tags:
     - gpib
 
@@ -86,6 +90,8 @@
   ansible.builtin.shell: ./bootstrap && ./configure && make
   args:
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-user/"
+  register: linux_gpib_configure_output
+  changed_when: linux_gpib_configure_output.rc != 0
   tags:
     - gpib
 
@@ -94,6 +100,8 @@
   ansible.builtin.shell: make install
   args:
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-user/"
+  register: linux_gpib_make_output
+  changed_when: linux_gpib_make_output.rc != 0
   tags:
     - gpib
 
@@ -148,24 +156,32 @@
 - name: Reread udev rules
   become: true
   ansible.builtin.shell: "udevadm control --reload-rules && udevadm trigger"
+  register: gpib_udevadm_output
+  changed_when: gpib_udevadm_output.rc != 0
   tags:
     - gpib
 
 - name: Run library reconfig (ldconfig)
   become: true
   ansible.builtin.command: ldconfig
+  register: gpib_ldconfig_output
+  changed_when: gpib_ldconfig_output.rc != 0
   tags:
     - gpib
 
 - name: Setup gpib to use gpib_bitbang for GPIB Pi Hat
   become: true
   ansible.builtin.command: modprobe gpib_bitbang sn7516x_used=1
+  register: gpib_modprobe_output
+  changed_when: gpib_modprobe_output.rc != 0
   tags:
     - gpib
 
 - name: Run gpib_config
   become: true
   ansible.builtin.command: gpib_config
+  register: gpib_config_output
+  changed_when: gpib_config_output.rc != 0
   tags:
     - gpib
 
