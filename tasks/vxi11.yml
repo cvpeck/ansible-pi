@@ -1,12 +1,12 @@
 - name: Enable rpcbind
-  become: true 
+  become: true
   ansible.builtin.service:
     name: rpcbind
     enabled: true
   tags:
     -vxi11
 
-- name: Start service prcbind
+- name: Start service rpcbind
   become: true
   ansible.builtin.service:
     name: rpcbind
@@ -20,7 +20,6 @@
     dest: /home/pi/repos/python-vxi11-server
   tags:
     - vxi11
-
 
 - name: Copy startup file for vxi-bridge
   become: true
@@ -36,7 +35,7 @@
     - vxi11
 
 - name: Enable vxi-bridge service
-  become: true 
+  become: true
   ansible.builtin.service:
     name: vxi-bridge
     enabled: true
@@ -44,10 +43,9 @@
     - vxi11
 
 - name: Start service vxi-bridge
-  become: true 
+  become: true
   ansible.builtin.service:
     name: vxi-bridge
     state: started
   tags:
     - vxi11
-

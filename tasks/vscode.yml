@@ -1,12 +1,14 @@
 - name: Install vscode prerequisite packages
   become: true
-  ansible.builtin.apt:
+  ansible.builtin.package:
     update_cache: true
     cache_valid_time: 3600
-    pkg:
+    name:
       - wget
       - gpg
       - apt-transport-https
+      - libboost-all-dev
+    state: latest
   tags:
     - vscode
 
@@ -14,12 +16,12 @@
   ansible.builtin.get_url:
     url: https://packages.microsoft.com/keys/microsoft.asc
     dest: /tmp/microsoft.asc
-    mode: 0600
+    mode: '0600'
   tags:
     - vscode
 
 - name: Delete existing key
-  file:
+  ansible.builtin.file:
     path: /tmp/microsoft.asc.gpg
     state: absent
   tags:
@@ -32,14 +34,14 @@
     - vscode
 
 - name: Install vscode key
-  become: yes
+  become: true
   ansible.builtin.command:
     cmd: install -D -o root -g root -m 644 /tmp/microsoft.asc.gpg /etc/apt/keyrings/packages.microsoft.gpg
   tags:
-    - vscode    
+    - vscode
 
-- name: key to repo
-  become: yes
+- name: Key to repo
+  become: true
   ansible.builtin.command:
     cmd: 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
   tags:
@@ -47,8 +49,9 @@
 
 - name: Install vscode from deb package
   become: true
-  ansible.builtin.apt:
+  ansible.builtin.package:
     update_cache: true
-    pkg: code
+    name: code
+    state: latest
   tags:
     - vscode

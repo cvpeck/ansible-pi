@@ -6,18 +6,17 @@
     pkg:
       - cups
       - printer-driver-escpr
-    state: latest
 
 - name: Add user to lpadmin group
   become: true
   ansible.builtin.user:
     name: "{{ ansible_user }}"
     groups: lpadmin
-    append: yes
+    append: true
 
 - name: Setup cups
   become: true
-  ansible.builtin.shell: cupsctl --remote-admin --remote-any --share-printers
+  ansible.builtin.command: cupsctl --remote-admin --remote-any --share-printers
 
 - name: Restart cups service
   become: true

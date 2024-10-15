@@ -1,6 +1,6 @@
 - name: Install initial packages
   become: true
-  apt:
+  ansible.builtin.apt:
     update_cache: true
     cache_valid_time: 3600
     pkg:
@@ -8,14 +8,14 @@
       - curl
       - gnupg
   tags:
-    - docker    
+    - docker
 
 - name: Install docker repo key to apt
   become: true
   ansible.builtin.apt_key:
     url: https://download.docker.com/linux/debian/gpg
   tags:
-    - docker  
+    - docker
 
 - name: Install docker repository to apt
   become: true
@@ -23,7 +23,7 @@
     repo: deb [arch=arm64] https://download.docker.com/linux/debian bullseye stable
     state: present
   tags:
-    - docker  
+    - docker
 
 - name: Install docker packages
   become: true
@@ -37,7 +37,7 @@
       - docker-compose-plugin
   tags:
     - docker
-      
+
 - name: Reboot the machine to make the docker.service start # see: https://bbs.archlinux.org/viewtopic.php?id=267694
   become: true
   ansible.builtin.reboot:
@@ -49,23 +49,23 @@
   ansible.builtin.service:
     name: docker
     state: restarted
-    enabled: yes
+    enabled: true
   tags:
-    - docker  
-    
+    - docker
+
 - name: Create "docker" group
   become: true
   ansible.builtin.group:
     name: docker
     state: present
   tags:
-    - docker  
+    - docker
 
 - name: Add user to "docker" group
   become: true
   ansible.builtin.user:
     name: "{{ ansible_user }}"
     groups: docker
-    append: yes
+    append: true
   tags:
-      - docker
+    - docker

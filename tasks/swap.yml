@@ -1,18 +1,26 @@
 - name: Disable swap
-  shell: dphys-swapfile swapoff
+  ansible.builtin.command: dphys-swapfile swapoff
   become: true
+  tags:
+    - swap
 
 - name: Edit swap
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/dphys-swapfile
     regexp: '^CONF_SWAPSIZE'
     line: "CONF_SWAPSIZE={{ swap_size_mb }}"
   become: true
+  tags:
+    - swap
 
 - name: Setup swap
-  shell: dphys-swapfile setup   
+  ansible.builtin.command: dphys-swapfile setup
   become: true
+  tags:
+    - swap
 
 - name: Enable swap
-  shell: dphys-swapfile swapon
+  ansible.builtin.command: dphys-swapfile swapon
   become: true
+  tags:
+    - swap

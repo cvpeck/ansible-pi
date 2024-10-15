@@ -1,7 +1,7 @@
 - name: Install packages for GPIB
-  become: yes 
+  become: true
   ansible.builtin.package:
-    name: 
+    name:
       - bpytop
       - subversion
       - build-essential
@@ -35,7 +35,6 @@
       - raspberrypi-kernel-headers
       - socat
       - lldb
-    state: latest
   tags:
     - gpib
 
@@ -55,7 +54,7 @@
     - gpib
 
 - name: Delete existing linux-gpib-code folder
-  file:
+  ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/repos/linux-gpib-code"
     state: absent
   tags:
@@ -76,7 +75,7 @@
     - gpib
 
 - name: Install linux-gpib kernel
-  become: yes
+  become: true
   ansible.builtin.shell: make install
   args:
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
@@ -91,7 +90,7 @@
     - gpib
 
 - name: Install linux-gpib user module
-  become: yes
+  become: true
   ansible.builtin.shell: make install
   args:
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-user/"
@@ -99,19 +98,19 @@
     - gpib
 
 - name: Replace gpib.conf file
-  become: yes
+  become: true
   ansible.builtin.copy:
     src: assets/gpib.conf
     dest: /usr/local/etc/gpib.conf
     owner: root
     group: root
     mode: '0644'
-    backup: yes
+    backup: true
   tags:
     - gpib
 
 - name: Ensure group gpib exists
-  become: yes
+  become: true
   ansible.builtin.group:
     name: gpib
     state: present
@@ -119,7 +118,7 @@
     - gpib
 
 - name: Add the user pi to gpib group
-  become: yes
+  become: true
   ansible.builtin.user:
     name: pi
     group: gpib
@@ -127,7 +126,7 @@
     - gpib
 
 - name: Add gpib group to udev rules for usb devices
-  become: yes
+  become: true
   ansible.builtin.lineinfile:
     path: /etc/udev/rules.d/99-com.rules
     regexp: 'SUBSYSTEM=="usb", MODE="0666", GROUP="gpib"'
@@ -137,7 +136,7 @@
     - gpib
 
 - name: Add gpib group to udev rules for /dev/gpib devices
-  become: yes
+  become: true
   ansible.builtin.lineinfile:
     path: /etc/udev/rules.d/99-com.rules
     regexp: 'KERNEL=="gpib[0-9]*", GROUP="gpib", MODE="0666"'
@@ -147,31 +146,31 @@
     - gpib
 
 - name: Reread udev rules
-  become: yes
+  become: true
   ansible.builtin.shell: "udevadm control --reload-rules && udevadm trigger"
   tags:
     - gpib
 
 - name: Run library reconfig (ldconfig)
-  become: yes
+  become: true
   ansible.builtin.command: ldconfig
   tags:
     - gpib
 
 - name: Setup gpib to use gpib_bitbang for GPIB Pi Hat
-  become: yes
+  become: true
   ansible.builtin.command: modprobe gpib_bitbang sn7516x_used=1
   tags:
     - gpib
 
 - name: Run gpib_config
-  become: yes
+  become: true
   ansible.builtin.command: gpib_config
   tags:
     - gpib
 
 - name: Delete existing equipment folder
-  file:
+  ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/repos/GPIBEquipController"
     state: absent
   tags:
@@ -181,12 +180,11 @@
   ansible.builtin.git:
     repo: "git@github.com:cvpeck/GPIBEquipController.git"
     dest: "{{ ansible_env.HOME }}/repos/GPIBEquipController"
-    clone: yes
-    update: yes
-    force: yes
+    clone: true
+    update: true
+    force: true
   tags:
     - gpib
-
 
 # #install testgear lib
 # cd ~/repos
