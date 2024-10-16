@@ -37,7 +37,7 @@
     - airsane
 
 - name: Clone AirSane repository
-  ansible.builtin.git:
+  ansible.builtin.git: # noqa: latest[git]
     repo: 'https://github.com/SimulPiscator/AirSane.git'
     dest: "{{ ansible_env.HOME }}/Projects/AirSane"
   tags:

@@ -15,7 +15,7 @@
     - vxi11
 
 - name: Git checkout of code
-  ansible.builtin.git:
+  ansible.builtin.git: # noqa: latest[git]
     repo: "https://github.com/PhilippCo/python-vxi11-server.git"
     dest: /home/pi/repos/python-vxi11-server
     clone: true

@@ -61,7 +61,7 @@
     - gpib
 
 - name: Checkout linux-gpib git repository
-  ansible.builtin.git:
+  ansible.builtin.git: # noqa: latest[git]
     repo: "https://git.code.sf.net/p/linux-gpib/git"
     dest: "{{ ansible_env.HOME }}/repos/linux-gpib-code"
   tags:
@@ -193,7 +193,7 @@
     - gpib
 
 - name: Checkout equipment repo
-  ansible.builtin.git:
+  ansible.builtin.git: # noqa: latest[git]
     repo: "git@github.com:cvpeck/GPIBEquipController.git"
     dest: "{{ ansible_env.HOME }}/repos/GPIBEquipController"
     clone: true

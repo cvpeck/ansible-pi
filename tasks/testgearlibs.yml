@@ -1,5 +1,5 @@
 - name: Git checkout of testgearlibs code
-  ansible.builtin.git:
+  ansible.builtin.git: # noqa: latest[git]
     repo: "https://github.com/PhilippCo/testgear.git"
     dest: /home/pi/repos/testgear
   tags:
