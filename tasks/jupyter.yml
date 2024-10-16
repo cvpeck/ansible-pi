@@ -65,7 +65,8 @@
     - jupyter
 
 - name: Ensure var jupyter_password is defined
-  ansible.builtin.fail: msg="Bailing out. Please define 'jupyter_password' var."
+  ansible.builtin.fail:
+    msg= "Bailing out. Please define 'jupyter_password' var."
   when: jupyter_password is undefined
   tags:
     - jupyter
@@ -86,7 +87,9 @@
 
 # master only
 - name: Generate jupyter password
-  ansible.builtin.shell: "PYTHONPATH={{ ansible_env.HOME }}/.local/lib/python3.9/site-packages python -c 'from jupyter_server.auth import passwd; print(passwd(\"{{ jupyter_password }}\"))'"
+  ansible.builtin.shell: |
+    "PYTHONPATH={{ ansible_env.HOME }}/.local/lib/python3.9/site-packages python -c 'from jupyter_server.auth import passwd
+    print(passwd(\"{{ jupyter_password }}\"))'"
   register: jpasswordhash
   changed_when: jpasswordhash.rc != 0
 
@@ -149,7 +152,7 @@
     - jupyter
 
 - name: Generate jupyter notebook config
-  ansible.builtin.shell: "{{ ansible_env.HOME }}/.local/bin/jupyter notebook --generate-config"
+  ansible.builtin.command: "{{ ansible_env.HOME }}/.local/bin/jupyter notebook --generate-config"
   when: not jupyterconf_stat.stat.exists
   register: notebook_config_output
   changed_when: notebook_config_output.rc != 0

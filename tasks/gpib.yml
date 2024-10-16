@@ -67,22 +67,24 @@
   tags:
     - gpib
 
-- name: Compile linux-gpib kernel module
-  ansible.builtin.shell: make clean && make
-  args:
+- name: Clean linux-gpib kernel module
+  ansible.builtin.make:
+    target: clean
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
-  register: linux_gpib_kernel_make_output
-  changed_when: linux_gpib_kernel_make_output.rc != 0
+  tags:
+    - gpib
+
+- name: Compile linux-gpib kernel module
+  ansible.builtin.make:
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
   tags:
     - gpib
 
 - name: Install linux-gpib kernel
   become: true
-  ansible.builtin.shell: make install
-  args:
+  ansible.builtin.make:
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
-  register: linux_gpib_make_output
-  changed_when: linux_gpib_make_output.rc != 0
+    target: install
   tags:
     - gpib
 
@@ -97,11 +99,9 @@
 
 - name: Install linux-gpib user module
   become: true
-  ansible.builtin.shell: make install
-  args:
+  ansible.builtin.mke:
     chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-user/"
-  register: linux_gpib_make_output
-  changed_when: linux_gpib_make_output.rc != 0
+    target: install
   tags:
     - gpib
 

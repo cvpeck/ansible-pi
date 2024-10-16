@@ -54,7 +54,7 @@
     - airsane
 
 - name: Cmake AirSane
-  ansible.builtin.shell: cmake ../AirSane
+  ansible.builtin.command: cmake ../AirSane
   args:
     chdir: "{{ airsane_build_dir }}"
   register: cmake_airsane_output
