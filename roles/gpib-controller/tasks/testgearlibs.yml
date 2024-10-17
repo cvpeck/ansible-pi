@@ -1,0 +1,14 @@
+- name: Git checkout of testgearlibs code
+  ansible.builtin.git: # noqa: latest[git]
+    repo: "https://github.com/PhilippCo/testgear.git"
+    dest: /home/pi/repos/testgear
+  tags:
+    - testgearlibs
+
+- name: Install testgearlibs
+  ansible.builtin.pip:
+    chdir: /home/pi/repos/testgear
+    editable: true
+    name: ./
+  tags:
+    - testgearlibs

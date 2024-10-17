@@ -1,0 +1,213 @@
+- name: Install packages for GPIB
+  become: true
+  ansible.builtin.package:
+    name:
+      - bpytop
+      - subversion
+      - build-essential
+      - texinfo
+      - texi2html
+      - libcwidget-dev
+      - tcl8.6-dev
+      - tk8.6-dev
+      - libncurses5-dev
+      - libx11-dev
+      - binutils-dev
+      - bison
+      - flex
+      - libusb-1.0-0
+      - libusb-dev
+      - libmpfr-dev
+      - libexpat1-dev
+      - tofrodos
+      - autoconf
+      - automake
+      - libtool
+      - libpython3-dev
+      - tmux
+      - mc
+      - python3-pip
+      - libatlas-base-dev
+      - python3-smbus
+      - libopenblas-dev
+      - liblapack-dev
+      - gfortran
+      - raspberrypi-kernel-headers
+      - socat
+      - lldb
+  tags:
+    - gpib
+
+- name: Install required python libraries
+  ansible.builtin.pip:
+    name:
+      - numpy
+      - pyvisa
+      - pyvisa-py
+      - scipy
+      - openpyxl
+      - pandas
+      - xlrd
+      - pyserial
+      - pyusb
+  tags:
+    - gpib
+
+- name: Delete existing linux-gpib-code folder
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/repos/linux-gpib-code"
+    state: absent
+  tags:
+    - gpib
+
+- name: Checkout linux-gpib git repository
+  ansible.builtin.git: # noqa: latest[git]
+    repo: "https://git.code.sf.net/p/linux-gpib/git"
+    dest: "{{ ansible_env.HOME }}/repos/linux-gpib-code"
+  tags:
+    - gpib
+
+- name: Clean linux-gpib kernel module
+  ansible.builtin.make:
+    target: clean
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
+  tags:
+    - gpib
+
+- name: Compile linux-gpib kernel module
+  ansible.builtin.make:
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
+  tags:
+    - gpib
+
+- name: Install linux-gpib kernel
+  become: true
+  ansible.builtin.make:
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-kernel/"
+    target: install
+  tags:
+    - gpib
+
+- name: Compile linux-gpib user module
+  ansible.builtin.shell: ./bootstrap && ./configure && make
+  args:
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-user/"
+  register: linux_gpib_configure_output
+  changed_when: linux_gpib_configure_output.rc != 0
+  tags:
+    - gpib
+
+- name: Install linux-gpib user module
+  become: true
+  ansible.builtin.mke:
+    chdir: "{{ ansible_env.HOME }}/repos/linux-gpib-code/linux-gpib-user/"
+    target: install
+  tags:
+    - gpib
+
+- name: Replace gpib.conf file
+  become: true
+  ansible.builtin.copy:
+    src: assets/gpib.conf
+    dest: /usr/local/etc/gpib.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  tags:
+    - gpib
+
+- name: Ensure group gpib exists
+  become: true
+  ansible.builtin.group:
+    name: gpib
+    state: present
+  tags:
+    - gpib
+
+- name: Add the user pi to gpib group
+  become: true
+  ansible.builtin.user:
+    name: pi
+    group: gpib
+  tags:
+    - gpib
+
+- name: Add gpib group to udev rules for usb devices
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/udev/rules.d/99-com.rules
+    regexp: 'SUBSYSTEM=="usb", MODE="0666", GROUP="gpib"'
+    line: SUBSYSTEM=="usb", MODE="0666", GROUP="gpib"
+    state: present
+  tags:
+    - gpib
+
+- name: Add gpib group to udev rules for /dev/gpib devices
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/udev/rules.d/99-com.rules
+    regexp: 'KERNEL=="gpib[0-9]*", GROUP="gpib", MODE="0666"'
+    line: KERNEL=="gpib[0-9]*", GROUP="gpib", MODE="0666"
+    state: present
+  tags:
+    - gpib
+
+- name: Reread udev rules
+  become: true
+  ansible.builtin.shell: "udevadm control --reload-rules && udevadm trigger"
+  register: gpib_udevadm_output
+  changed_when: gpib_udevadm_output.rc != 0
+  tags:
+    - gpib
+
+- name: Run library reconfig (ldconfig)
+  become: true
+  ansible.builtin.command: ldconfig
+  register: gpib_ldconfig_output
+  changed_when: gpib_ldconfig_output.rc != 0
+  tags:
+    - gpib
+
+- name: Setup gpib to use gpib_bitbang for GPIB Pi Hat
+  become: true
+  ansible.builtin.command: modprobe gpib_bitbang sn7516x_used=1
+  register: gpib_modprobe_output
+  changed_when: gpib_modprobe_output.rc != 0
+  tags:
+    - gpib
+
+- name: Run gpib_config
+  become: true
+  ansible.builtin.command: gpib_config
+  register: gpib_config_output
+  changed_when: gpib_config_output.rc != 0
+  tags:
+    - gpib
+
+- name: Delete existing equipment folder
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/repos/GPIBEquipController"
+    state: absent
+  tags:
+    - gpib
+
+- name: Checkout equipment repo
+  ansible.builtin.git: # noqa: latest[git]
+    repo: "git@github.com:cvpeck/GPIBEquipController.git"
+    dest: "{{ ansible_env.HOME }}/repos/GPIBEquipController"
+    clone: true
+    update: true
+    force: true
+  tags:
+    - gpib
+
+# #install testgear lib
+# cd ~/repos
+# git clone https://github.com/PhilippCo/testgear.git
+# cd testgear
+# pip3 install -e ./
+
+
+# echo "generate SSH key"
+# ssh-keygen -b 4096 -t rsa -f /home/pi/.ssh/id_rsa -q -N ""

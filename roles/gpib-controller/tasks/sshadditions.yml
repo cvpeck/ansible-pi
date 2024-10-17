@@ -1,0 +1,61 @@
+- name: Debug message
+  ansible.builtin.debug:
+    msg: "Adding useful packages for ssh connections"
+  tags:
+    - sshadditions
+
+- name: Install tmux
+  become: true
+  ansible.builtin.package:
+    name: tmux
+    state: present
+  tags:
+    - sshadditions
+
+- name: Install screen for heathens
+  become: true
+  ansible.builtin.package:
+    name: screen
+    state: present
+  tags:
+    - sshadditions
+
+- name: Add an Apt signing key for mistertea repoL
+  become: true
+  ansible.builtin.apt_key:
+    url: https://mistertea.github.io/debian-et/et.gpg
+    state: present
+  tags:
+    - sshadditions
+
+- name: Add mistertea repo into sources list
+  become: true
+  ansible.builtin.apt_repository:
+    repo: deb https://mistertea.github.io/debian-et/debian-source/ bullseye main
+    state: present
+  tags:
+    - sshadditions
+
+- name: Install et for more stable ssh connections
+  become: true
+  ansible.builtin.package:
+    name: et
+    state: present
+  tags:
+    - sshadditions
+
+- name: Enable et
+  become: true
+  ansible.builtin.service:
+    name: et
+    enabled: true
+  tags:
+    - sshadditions
+
+- name: Start service et
+  become: true
+  ansible.builtin.service:
+    name: et
+    state: started
+  tags:
+    - sshadditions

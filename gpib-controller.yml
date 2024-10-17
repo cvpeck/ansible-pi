@@ -1,0 +1,12 @@
+---
+# file: gpib-controller.yml
+- hosts: piGPIBs
+  roles:
+    - gpib-controller
+  gather_facts: yes
+  vars_prompt:
+    - name: jupyter_password
+      prompt: Enter password for jupyter server
+      default: "Password1"
+      private: true
+      confirm: true

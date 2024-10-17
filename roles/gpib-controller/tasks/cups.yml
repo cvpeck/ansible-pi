@@ -1,0 +1,35 @@
+- name: Install cups packages
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    pkg:
+      - cups
+      - printer-driver-escpr
+  tags:
+    - cups
+
+- name: Add user to lpadmin group
+  become: true
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: lpadmin
+    append: true
+  tags:
+    - cups
+
+- name: Setup cups
+  become: true
+  ansible.builtin.command: cupsctl --remote-admin --remote-any --share-printers
+  register: cups_ctl_output
+  changed_when: cups_ctl_output.rc != 0
+  tags:
+    - cups
+
+- name: Restart cups service
+  become: true
+  ansible.builtin.service:
+    name: cups
+    state: restarted
+  tags:
+    - cups

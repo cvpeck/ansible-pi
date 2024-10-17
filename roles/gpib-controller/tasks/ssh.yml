@@ -1,0 +1,49 @@
+- name: Update sshd_config
+  become: true
+  ansible.builtin.blockinfile:
+    dest: "/etc/ssh/sshd_config"
+    insertafter: "^Include /etc/ssh/sshd_config"
+    block: |
+      Protocol 2
+      PasswordAuthentication no
+      PermitEmptyPasswords no
+      PermitRootLogin no
+      MaxAuthTries 3
+  tags:
+    - ssh
+
+- name: Restart sshd service
+  become: true
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+    enabled: true
+  tags:
+    - ssh
+
+- name: Generate the key
+  community.crypto.openssh_keypair:
+    path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+    type: ed25519
+  tags:
+    - ssh
+
+- name: Get key contents
+  ansible.builtin.command: "cat {{ ansible_env.HOME }}/.ssh/id_ed25519.pub"
+  register: command_output
+  changed_when: command_output.rc != 0
+  tags:
+    - ssh
+
+- name: Print to console
+  ansible.builtin.debug:
+    msg: "{{ command_output.stdout }}"
+  tags:
+    - ssh
+
+- name: Pause for public key copying
+  ansible.builtin.pause:
+    prompt: "Please enter the above ssh public key to GitHub and then press a key"
+    echo: true
+  tags:
+    - ssh

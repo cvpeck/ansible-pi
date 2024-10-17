@@ -1,0 +1,33 @@
+- name: Update apt-get repo and cache
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  tags:
+    - initialsetup
+
+- name: Upgrade all apt packages
+  become: true
+  ansible.builtin.apt:
+    upgrade: dist
+  tags:
+    - initialsetup
+
+- name: Install packages
+  become: true
+  ansible.builtin.apt:
+    pkg:
+      - git
+      - sqlite3
+  tags:
+    - initialsetup
+
+- name: Crontab - setup update and upgrade
+  become: true
+  ansible.builtin.cron:
+    name: "Update and upgrade"
+    minute: "0"
+    hour: "5"
+    job: "apt update -q -y && apt dist-upgrade -q -y"
+  tags:
+    - initialsetup
